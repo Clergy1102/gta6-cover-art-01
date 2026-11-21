@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vice City Cover Lab — 多格封面制作器</title>
+<style>
+  :root{
+    --bg:#14121c; --panel:#221f30; --panel-2:#2b2839; --edge:rgba(255,255,255,.11);
+    --ink:#f4f1ea; --dim:#a9a4b6; --faint:#7e7990;
+    --coral:#ff6f59; --pink:#f2a0c8; --lime:#d8f75c; --aqua:#6fe3e0;
+    --display:"Arial Black",Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    --body:Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh}
+  .shell{max-width:1480px;margin:0 auto;padding:20px 26px 34px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:18px;
+    padding-bottom:16px;border-bottom:1px solid var(--edge)}
+  .logo{display:flex;align-items:center;gap:12px}
+  .mark{width:36px;height:36px;flex:0 0 36px;
+    background:linear-gradient(135deg,var(--coral),var(--pink) 52%,var(--aqua));
+    clip-path:polygon(0 0,100% 0,82% 100%,0 82%)}
+  .logo b{display:block;font:900 14px var(--display);letter-spacing:.1em}
+  .logo span{display:block;font-size:11px;color:var(--dim);margin-top:3px}
+  .offline{font-size:11px;color:var(--dim);letter-spacing:.06em}
+  .offline b{color:var(--lime)}
+  .work{display:grid;grid-template-columns:350px minmax(0,1fr);gap:28px;padding-top:22px}
+  .panel{background:var(--panel);border:1px solid var(--edge);padding:20px 20px 22px;
+    align-self:start;box-shadow:7px 7px 0 #0b0a12}
+  .panel h1{font:900 24px/1 var(--display);letter-spacing:-.03em;margin:0 0 8px}
+  .panel .lede{font-size:12px;line-height:1.6;color:var(--dim);margin:0 0 18px}
+  .block{padding:16px 0;border-top:1px solid var(--edge)}
+  .block-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}
+  .block-head h2{font-size:12px;font-weight:800;margin:0;letter-spacing:.03em}
+  .block-head i{font-style:normal;font-size:10px;color:var(--faint)}
+  .pick{display:flex;align-items:center;gap:11px;border:1px dashed #5d5870;background:#1a1826;
+    padding:12px;cursor:pointer}
+  .pick:hover{border-color:var(--pink)}
+  .pick .plus{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;
+    background:var(--coral);color:#17141f;font-size:21px;font-weight:900}
+  .pick strong{display:block;font-size:12px}
+  .pick small{display:block;font-size:10px;color:var(--dim);margin-top:3px}
+  .pick input{display:none}
+  .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .thumbs img{width:46px;height:46px;object-fit:cover;cursor:pointer;opacity:.75;
+    border:2px solid transparent}
+  .thumbs img.on{border-color:var(--lime);opacity:1}
+  .hint{font-size:10px;color:var(--faint);margin-top:8px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .choice{border:1px solid #484452;background:#292637;color:#d8d4de;cursor:pointer;
+    font:700 11px var(--body);padding:9px 8px;text-align:left;display:flex;gap:8px;align-items:center}
+  .choice:hover{border-color:#8f89a3}
+  .choice.on{border-color:var(--lime);background:#31331f;color:#fff;box-shadow:inset 3px 0 var(--lime)}
+  .glyph{width:26px;height:26px;flex:0 0 26px;display:grid;gap:2px}
+  .glyph i{background:#8d879c}
+  .glyph.four{grid-template:1fr 1fr/1fr 1fr}
+  .glyph.two{grid-template:1fr 1fr/1fr}
+  .glyph.hero{grid-template:1fr 1fr/1.25fr 1fr}
+  .glyph.bars{grid-template:1fr/1fr 1fr 1fr}
+  .choice.on .glyph i{background:var(--pink)}
+  .choice small{display:block;font-size:9px;color:#9b96a8;font-weight:500;margin-top:2px}
+  .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .grade{border:1px solid #484452;background:#292637;color:#d8d4de;cursor:pointer;
+    font:700 10px var(--body);padding:8px 4px;text-align:center}
+  .grade:hover{border-color:#8f89a3}
+  .grade.on{border-color:var(--coral);color:#fff;box-shadow:inset 0 -3px var(--coral)}
+  .swatch{height:16px;margin-bottom:6px}
+  .sw-sunset{background:linear-gradient(110deg,#fc7a56,#ffb16e 45%,#e86fae)}
+  .sw-neon{background:linear-gradient(110deg,#3a20a0,#ee3fb9 50%,#b7ff45)}
+  .sw-night{background:linear-gradient(110deg,#0a1f4c,#3e5bb0 50%,#e861b0)}
+  label.lbl{display:block;font-size:10px;color:var(--dim);margin-bottom:5px}
+  input[type=text]{width:100%;background:#171524;border:1px solid #474354;color:#fff;
+    padding:9px 10px;font:700 13px var(--body);outline:none}
+  input[type=text]:focus{border-color:var(--pink)}
+  .row{display:grid;grid-template-columns:1fr 62px 46px;gap:9px;align-items:end;margin-top:10px}
+  .row .top{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px}
+  input[type=range]{width:100%;accent-color:var(--pink)}
+  input[type=color]{width:40px;height:30px;border:0;padding:0;background:none;cursor:pointer}
+  .boldbtn{height:30px;background:#171524;border:1px solid #474354;color:#fff;
+    font-weight:900;cursor:pointer}
+  .boldbtn[aria-pressed="true"]{color:var(--lime);border-color:var(--lime)}
+  .tile{margin-bottom:10px}
+  .tile .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+  .tile .top span{font-size:11px}
+  .tile .top button{background:none;border:0;color:var(--aqua);font:700 10px var(--body);cursor:pointer}
+  .tile .top button.live{color:var(--lime)}
+  .tile select{width:100%;background:#171524;border:1px solid #474354;color:#fff;
+    padding:7px;font:11px var(--body)}
+  .tile input[type=range]{margin-top:6px}
+  .spanbtn{width:100%;background:#1a1925;border:1px solid #514d60;color:#e6e2ec;
+    padding:10px;font:700 11px var(--body);cursor:pointer;text-align:left}
+  .spanbtn:hover,.spanbtn.on{border-color:var(--lime);color:var(--lime)}
+  .sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .size{padding:8px 3px;background:#191723;color:#c8c4cf;border:1px solid #484452;
+    cursor:pointer;font:700 10px var(--body)}
+  .size.on{border-color:var(--aqua);color:#fff;box-shadow:inset 0 -2px var(--aqua)}
+  .go{width:100%;margin-top:10px;border:0;background:var(--lime);color:#15131c;
+    padding:13px;font:900 13px var(--display);cursor:pointer;
+    clip-path:polygon(0 0,100% 0,97% 100%,0 100%)}
+  .go:hover{filter:brightness(1.07)}
+  .fine{font-size:9px;color:var(--faint);text-align:center;margin-top:8px}
+  .stage{min-width:0;display:flex;flex-direction:column}
+  .stage-bar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+  .stage-bar h2{font:900 clamp(20px,2.6vw,32px)/1 var(--display);letter-spacing:-.04em;margin:0}
+  .stage-bar h2 em{font-style:normal;color:var(--coral)}
+  .stage-bar p{font-size:10px;color:var(--dim);margin:7px 0 0}
+  .live{font-size:10px;color:var(--lime);border:1px solid #54523f;padding:6px 9px}
+  .board{position:relative;flex:1;min-height:520px;display:grid;place-items:center;overflow:hidden;
+    background:#1e1c29;
+    background-image:linear-gradient(45deg,#252233 25%,transparent 25%),linear-gradient(-45deg,#252233 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#252233 75%),linear-gradient(-45deg,transparent 75%,#252233 75%);
+    background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0;
+    outline:1px solid var(--edge)}
+  #poster{display:block;max-width:calc(100% - 52px);max-height:calc(100% - 52px);
+    box-shadow:0 16px 44px rgba(0,0,0,.5);cursor:grab;touch-action:none}
+  #poster.grabbing{cursor:grabbing}
+  .empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+    color:#d5d0da;pointer-events:none}
+  .empty[hidden]{display:none}
+  .empty .vc{font:900 52px/.8 var(--display);color:#514d60}
+  .empty p{font-size:14px;font-weight:700;margin:14px 0 0}
+  .empty small{font-size:11px;color:var(--dim);display:block;margin-top:6px}
+  .stage-foot{display:flex;justify-content:space-between;gap:12px;font-size:10px;
+    color:#9e99a8;padding:11px 1px 0}
+  .stage-foot b{color:#d6d1dc}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);z-index:20;
+    background:var(--lime);color:#171523;font-size:12px;font-weight:700;padding:11px 16px;
+    opacity:0;pointer-events:none;transition:.18s}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media(max-width:900px){
+    .work{grid-template-columns:1fr}
+    .panel{order:2}.stage{order:1}
+    .board{min-height:56vw}
+    .offline{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="logo"><span class="mark"></span><div><b>VICE CITY COVER LAB</b><span>你的照片，你的夜城封面</span></div></div>
+    <div class="offline"><b>离线创作</b> · 图片只在此设备处理</div>
+  </header>
+
+  <div class="work">
+    <aside class="panel">
+      <h1>做一张封面。</h1>
+      <p class="lede">放入自己的照片，拼出属于你的 Vice City 夜色。拖动预览里的格子来调整取景。</p>
+
+      <section class="block">
+        <div class="block-head"><h2>照片</h2><i>添加图片</i></div>
+        <label class="pick" for="fileInput"><span class="plus">＋</span>
+          <span><strong>选择多张照片</strong><small>JPG、PNG、WebP · 仅本地读取</small></span>
+          <input id="fileInput" type="file" accept="image/*" multiple>
+        </label>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="hint" id="photoHint">至少添加一张照片开始创作</div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h2>版式</h2><i>选择分格方式</i></div>
+        <div class="choices">
+          <button class="choice on" data-layout="grid"><span class="glyph four"><i></i><i></i><i></i><i></i></span><span>2 × 2 四格<small>均分画面</small></span></button>
+          <button class="choice" data-layout="halves"><span class="glyph two"><i></i><i></i></span><span>上下两格<small>宽幅切分</small></span></button>
+          <button class="choice" data-layout="hero"><span class="glyph hero"><i></i><i></i><i></i></span><span>左大右二<small>主次构图</small></span></button>
+          <button class="choice" data-layout="bars"><span class="glyph bars"><i></i><i></i><i></i></span><span>竖条三格<small>电影切片</small></span></button>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h2>整体色调</h2><i>实时预览</i></div>
+        <div class="grades">
+          <button class="grade on" data-grade="sunset"><span class="swatch sw-sunset"></span>落日余晖</button>
+          <button class="grade" data-grade="neon"><span class="swatch sw-neon"></span>霓虹漫游</button>
+          <button class="grade" data-grade="night"><span class="swatch sw-night"></span>午夜蓝调</button>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h2>封面文案</h2><i>粗体压图</i></div>
+        <label class="lbl" for="titleText">主标题</label>
+        <input id="titleText" type="text" maxlength="30" value="VICE CITY" autocomplete="off">
+        <label class="lbl" for="subText" style="margin-top:9px">副标题</label>
+        <input id="subText" type="text" maxlength="44" value="SUMMER NEVER ENDS" autocomplete="off">
+        <div class="row">
+          <div><div class="top"><label for="titleSize">主标题字号</label><span id="titleSizeNum">140</span></div>
+            <input id="titleSize" type="range" min="58" max="210" value="140"></div>
+          <div><div class="top"><label for="titleColor">字色</label></div>
+            <input id="titleColor" type="color" value="#ffffff" aria-label="主标题颜色"></div>
+          <div><div class="top"><label>粗体</label></div>
+            <button id="boldBtn" class="boldbtn" aria-pressed="true">B</button></div>
+        </div>
+        <div class="row">
+          <div><div class="top"><label for="subSize">副标题字号</label><span id="subSizeNum">28</span></div>
+            <input id="subSize" type="range" min="14" max="64" value="28"></div>
+          <div><div class="top"><label for="subColor">字色</label></div>
+            <input id="subColor" type="color" value="#d8f75c" aria-label="副标题颜色"></div>
+          <div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h2>格子取景</h2><i>点击格子后可编辑</i></div>
+        <div id="tiles"></div>
+      </section>
+
+      <section class="block">
+        <div class="block-head"><h2>导出 PNG</h2><i>选择画布尺寸</i></div>
+        <div class="sizes">
+          <button class="size on" data-size="square">1080 × 1080</button>
+          <button class="size" data-size="portrait">1080 × 1350</button>
+          <button class="size" data-size="wide">1920 × 1080</button>
+        </div>
+        <button class="go" id="exportBtn">下载 PNG 封面</button>
+        <div class="fine">无水印 · 高分辨率 · 保存在你的设备</div>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-bar">
+        <div><h2>MAKE YOUR <em>NIGHT.</em></h2><p>实时画布 / 点选格子，再拖动照片调整构图</p></div>
+        <div class="live">LIVE CANVAS</div>
+      </div>
+      <div class="board" id="board">
+        <canvas id="poster" width="800" height="800"></canvas>
+        <div class="empty" id="emptyBox"><div><div class="vc">VC</div><p>先把你的照片带进夜城</p><small>点击左侧「选择多张照片」开始</small></div></div>
+      </div>
+      <div class="stage-foot"><span>原创风格 · 系统字体 · 本地处理</span><span><b id="activeName">格子 1</b>　拖动照片调整位置</span></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const canvas = $('#poster');
+  const ctx = canvas.getContext('2d');
+  const board = $('#board');
+
+  const SIZES = { square: [1080, 1080], portrait: [1080, 1350], wide: [1920, 1080] };
+  const LAYOUTS = {
+    grid:   [[0, 0, .5, .5], [.5, 0, .5, .5], [0, .5, .5, .5], [.5, .5, .5, .5]],
+    halves: [[0, 0, 1, .5], [0, .5, 1, .5]],
+    hero:   [[0, 0, .6, 1], [.6, 0, .4, .5], [.6, .5, .4, .5]],
+    bars:   [[0, 0, 1 / 3, 1], [1 / 3, 0, 1 / 3, 1], [2 / 3, 0, 1 / 3, 1]],
+  };
+  const GRADES = {
+    sunset: { wash: 'rgba(255,104,80,.20)', mode: 'soft-light', hi: '#ffad67', lo: '#e967ab', a: '#ff795b', b: '#d8f75c' },
+    neon:   { wash: 'rgba(178,32,224,.24)', mode: 'screen',     hi: '#5522ac', lo: '#ef42ba', a: '#d8f75c', b: '#62e5e4' },
+    night:  { wash: 'rgba(13,38,120,.34)',  mode: 'multiply',   hi: '#102a62', lo: '#7852d2', a: '#62e5e4', b: '#ed68a8' },
+  };
+  const FONT = '"Arial Black", Arial, "PingFang SC", sans-serif';
+
+  const state = {
+    photos: [], layout: 'grid', grade: 'sunset', cells: [], active: 0,
+    size: 'square', span: -1, spanZoom: 1, spanX: 0, spanY: 0,
+    title: 'VICE CITY', sub: 'SUMMER NEVER ENDS',
+    titleSize: 140, titleColor: '#ffffff', subSize: 28, subColor: '#d8f75c', bold: true,
+    drag: null,
+  };
+
+  function syncCells() {
+    const n = LAYOUTS[state.layout].length;
+    while (state.cells.length < n) {
+      state.cells.push({ photo: state.photos.length ? state.cells.length % state.photos.length : -1, zoom: 1, x: 0, y: 0 });
+    }
+    state.cells.length = n;
+    if (state.active >= n) state.active = 0;
+  }
+
+  function rectsOf(w, h) {
+    return LAYOUTS[state.layout].map(([x, y, rw, rh]) => ({ x: x * w, y: y * h, w: rw * w, h: rh * h }));
+  }
+
+  function paintPhoto(c, img, r, zoom, px, py, fullW, fullH) {
+    const scale = Math.max(r.w / img.width, r.h / img.height) * zoom;
+    const dw = img.width * scale, dh = img.height * scale;
+    const slackX = Math.max(0, dw - r.w), slackY = Math.max(0, dh - r.h);
+    let dx = r.x + (r.w - dw) / 2 + px * slackX / 2;
+    let dy = r.y + (r.h - dh) / 2 + py * slackY / 2;
+    dx = Math.min(r.x, Math.max(r.x + r.w - dw, dx));
+    dy = Math.min(r.y, Math.max(r.y + r.h - dh, dy));
+    const g = GRADES[state.grade];
+    c.save();
+    c.beginPath(); c.rect(r.x, r.y, r.w, r.h); c.clip();
+    c.drawImage(img, dx, dy, dw, dh);
+    c.globalCompositeOperation = g.mode;
+    c.fillStyle = g.wash; c.fillRect(r.x, r.y, r.w, r.h);
+    c.globalCompositeOperation = 'source-over';
+    const tint = c.createLinearGradient(r.x, r.y, r.x + r.w * .7, r.y + r.h);
+    tint.addColorStop(0, g.hi + '33'); tint.addColorStop(1, g.lo + '55');
+    c.fillStyle = tint; c.fillRect(r.x, r.y, r.w, r.h);
+    c.restore();
+  }
+
+  function paintEmpty(c, r, i) {
+    const g = GRADES[state.grade];
+    const grad = c.createLinearGradient(r.x, r.y, r.x + r.w, r.y + r.h);
+    grad.addColorStop(0, g.hi); grad.addColorStop(1, g.lo);
+    c.fillStyle = grad; c.fillRect(r.x, r.y, r.w, r.h);
+    c.save();
+    c.beginPath(); c.rect(r.x, r.y, r.w, r.h); c.clip();
+    c.fillStyle = 'rgba(19,17,39,.26)';
+    c.beginPath();
+    c.moveTo(r.x, r.y + r.h * .72);
+    c.lineTo(r.x + r.w * .26, r.y + r.h * .4);
+    c.lineTo(r.x + r.w * .5, r.y + r.h * .66);
+    c.lineTo(r.x + r.w * .72, r.y + r.h * .32);
+    c.lineTo(r.x + r.w, r.y + r.h * .7);
+    c.lineTo(r.x + r.w, r.y + r.h); c.lineTo(r.x, r.y + r.h);
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.3)';
+    c.lineWidth = Math.max(2, r.w * .004);
+    c.beginPath(); c.arc(r.x + r.w * .74, r.y + r.h * .24, Math.min(r.w, r.h) * .07, 0, Math.PI * 2); c.stroke();
+    c.restore();
+    c.save();
+    c.fillStyle = 'rgba(255,255,255,.85)';
+    c.font = `900 ${Math.min(r.w, r.h) * .09}px ${FONT}`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(`PHOTO ${i + 1}`, r.x + r.w / 2, r.y + r.h * .54);
+    c.restore();
+  }
+
+  function paintWords(c, w, h) {
+    const g = GRADES[state.grade];
+    const k = Math.min(w, h) / 1080;
+    const main = state.title.trim(), sub = state.sub.trim();
+    const cx = w / 2, cy = h * .79, maxW = w * .9;
+    let size = Math.max(10, state.titleSize * k);
+    const weight = state.bold ? 900 : 700;
+    c.save();
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = `${weight} ${size}px ${FONT}`;
+    while (main && c.measureText(main).width > maxW && size > 20) {
+      size -= 2; c.font = `${weight} ${size}px ${FONT}`;
+    }
+    if (main) {
+      c.lineJoin = 'round';
+      c.lineWidth = Math.max(3, size * .075);
+      c.strokeStyle = 'rgba(15,10,29,.88)';
+      c.shadowColor = 'rgba(8,5,18,.55)';
+      c.shadowBlur = size * .1; c.shadowOffsetY = size * .045;
+      c.strokeText(main, cx, cy, maxW);
+      c.shadowColor = 'transparent';
+      c.fillStyle = state.titleColor;
+      c.fillText(main, cx, cy, maxW);
+    }
+    if (sub) {
+      const sSize = Math.max(10, state.subSize * k);
+      c.font = `900 ${sSize}px ${FONT}`;
+      try { c.letterSpacing = `${sSize * .16}px`; } catch (e) { /* older canvas */ }
+      const sw = Math.min(maxW, c.measureText(sub).width + sSize * .6);
+      const sh = sSize * 1.65, sx = cx - sw / 2, sy = cy + size * .57;
+      c.fillStyle = g.a;
+      c.beginPath();
+      c.moveTo(sx, sy - sh / 2); c.lineTo(sx + sw, sy - sh / 2);
+      c.lineTo(sx + sw - sSize * .45, sy + sh / 2); c.lineTo(sx - sSize * .45, sy + sh / 2);
+      c.closePath(); c.fill();
+      // Dark outline keeps the subtitle readable on any grade's bar colour.
+      c.lineJoin = 'round';
+      c.lineWidth = Math.max(2, sSize * .09);
+      c.strokeStyle = 'rgba(15,10,29,.85)';
+      c.strokeText(sub, cx, sy, sw - sSize * .45);
+      c.fillStyle = state.subColor;
+      c.fillText(sub, cx, sy, sw - sSize * .45);
+    }
+    c.restore();
+  }
+
+  // Draws the whole poster at any size; returns the canvas it drew on.
+  function drawPoster(w, h) {
+    const off = (w === canvas.width && h === canvas.height) ? canvas : document.createElement('canvas');
+    const c = off.getContext('2d');
+    if (off !== canvas) { off.width = w; off.height = h; }
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = '#171523'; c.fillRect(0, 0, w, h);
+    const gap = Math.max(7, Math.min(w, h) * .012);
+    const rects = rectsOf(w, h);
+    const spanImg = state.span >= 0 ? state.photos[state.span]?.img : null;
+    rects.forEach((r, i) => {
+      const cell = { x: r.x + gap / 2, y: r.y + gap / 2, w: r.w - gap, h: r.h - gap };
+      if (spanImg && spanImg.complete) {
+        paintPhoto(c, spanImg, cell, state.spanZoom, state.spanX, state.spanY, w, h);
+      } else {
+        const img = state.cells[i] && state.photos[state.cells[i].photo]?.img;
+        if (img && img.complete) paintPhoto(c, img, cell, state.cells[i].zoom, state.cells[i].x, state.cells[i].y, w, h);
+        else paintEmpty(c, cell, i);
+      }
+    });
+    const g = GRADES[state.grade];
+    const bandH = h * .18;
+    const fade = c.createLinearGradient(0, h - bandH, 0, h);
+    fade.addColorStop(0, 'rgba(10,8,25,0)'); fade.addColorStop(1, 'rgba(10,8,25,.72)');
+    c.fillStyle = fade; c.fillRect(0, h - bandH, w, bandH);
+    c.save(); c.globalAlpha = .96;
+    c.fillStyle = g.a;
+    c.beginPath();
+    c.moveTo(0, h * .075); c.lineTo(w * .34, h * .075); c.lineTo(w * .31, h * .087); c.lineTo(0, h * .087);
+    c.fill();
+    c.fillStyle = g.b;
+    c.beginPath();
+    c.moveTo(w * .78, h * .89); c.lineTo(w, h * .89); c.lineTo(w, h * .902); c.lineTo(w * .77, h * .902);
+    c.fill();
+    c.restore();
+    paintWords(c, w, h);
+    return off;
+  }
+
+  function fitPreview() {
+    const box = board.getBoundingClientRect();
+    const ratio = canvas.width / canvas.height;
+    let w = Math.max(220, box.width - 48), h = w / ratio;
+    if (h > box.height - 48) { h = box.height - 48; w = h * ratio; }
+    return [Math.floor(w * devicePixelRatio), Math.floor(h * devicePixelRatio)];
+  }
+
+  function render() {
+    syncCells();
+    const [w, h] = fitPreview();
+    if (w > 0 && h > 0 && (Math.abs(canvas.width - w) > 1 || Math.abs(canvas.height - h) > 1)) {
+      canvas.width = w; canvas.height = h;
+    }
+    drawPoster(canvas.width, canvas.height);
+    $('#emptyBox').hidden = state.photos.length > 0;
+    $('#activeName').textContent = `格子 ${state.active + 1}`;
+    renderTiles();
+  }
+
+  function renderTiles() {
+    const host = $('#tiles');
+    host.innerHTML = '';
+    state.cells.forEach((cell, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'tile';
+      const top = document.createElement('div');
+      top.className = 'top';
+      const name = document.createElement('span');
+      name.textContent = `格子 ${i + 1}`;
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.textContent = state.active === i ? '已选' : '调整';
+      pick.className = state.active === i ? 'live' : '';
+      pick.addEventListener('click', () => { state.active = i; render(); });
+      top.append(name, pick);
+      const sel = document.createElement('select');
+      sel.setAttribute('aria-label', `格子 ${i + 1} 使用照片`);
+      const none = document.createElement('option');
+      none.value = '-1'; none.textContent = '选择图片';
+      sel.append(none);
+      state.photos.forEach((p, idx) => {
+        const o = document.createElement('option');
+        o.value = String(idx); o.textContent = p.name;
+        sel.append(o);
+      });
+      sel.value = String(cell.photo);
+      sel.disabled = !state.photos.length;
+      sel.addEventListener('change', () => {
+        cell.photo = Number(sel.value);
+        if (state.span >= 0) state.span = cell.photo < 0 ? -1 : cell.photo;
+        render();
+      });
+      const zoom = document.createElement('input');
+      zoom.type = 'range'; zoom.min = '1'; zoom.max = '3'; zoom.step = '.01';
+      zoom.value = String(cell.zoom);
+      zoom.disabled = state.span >= 0;
+      zoom.setAttribute('aria-label', `格子 ${i + 1} 缩放`);
+      zoom.addEventListener('input', () => {
+        cell.zoom = Number(zoom.value);
+        if (i !== state.active) state.active = i;
+        drawPoster(canvas.width, canvas.height);
+      });
+      wrap.append(top, sel, zoom);
+      host.append(wrap);
+    });
+    const spanBtn = document.createElement('button');
+    spanBtn.type = 'button';
+    spanBtn.className = 'spanbtn' + (state.span >= 0 ? ' on' : '');
+    spanBtn.textContent = state.span >= 0 ? '同一张照片铺满中 · 点击退出' : '用当前格照片铺满全部格子';
+    spanBtn.disabled = !state.photos.length;
+    spanBtn.addEventListener('click', () => {
+      if (state.span >= 0) { state.span = -1; }
+      else {
+        const p = state.cells[state.active]?.photo;
+        if (p === undefined || p < 0) { toast('先为当前格选择一张照片'); return; }
+        state.span = p; state.spanZoom = 1; state.spanX = 0; state.spanY = 0;
+      }
+      render();
+    });
+    host.append(spanBtn);
+    if (state.span >= 0) {
+      const z = document.createElement('input');
+      z.type = 'range'; z.min = '1'; z.max = '3'; z.step = '.01';
+      z.value = String(state.spanZoom);
+      z.setAttribute('aria-label', '整张照片缩放');
+      z.style.marginTop = '8px';
+      z.addEventListener('input', () => { state.spanZoom = Number(z.value); drawPoster(canvas.width, canvas.height); });
+      host.append(z);
+    }
+  }
+
+  function renderThumbs() {
+    const host = $('#thumbs');
+    host.innerHTML = '';
+    state.photos.forEach((p, i) => {
+      const im = document.createElement('img');
+      im.src = p.url; im.alt = p.name; im.title = p.name;
+      im.className = state.cells[state.active]?.photo === i ? 'on' : '';
+      im.addEventListener('click', () => {
+        state.cells[state.active].photo = i;
+        if (state.span >= 0) state.span = i;
+        renderThumbs(); render();
+      });
+      host.append(im);
+    });
+    $('#photoHint').hidden = state.photos.length > 0;
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
+  }
+
+  function addFiles(files) {
+    const imgs = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (!imgs.length) return;
+    const firstBatch = state.photos.length === 0;
+    let pending = imgs.length, added = 0;
+    const done = () => {
+      pending -= 1;
+      if (pending === 0) {
+        if (firstBatch && state.photos.length) {
+          state.cells = LAYOUTS[state.layout].map((_, i) => ({ photo: i % state.photos.length, zoom: 1, x: 0, y: 0 }));
+          state.active = 0;
+        }
+        renderThumbs(); render();
+        toast(added ? `已添加 ${added} 张照片` : '有图片无法读取');
+      }
+    };
+    imgs.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { state.photos.push({ name: file.name, img, url }); added += 1; done(); };
+      img.onerror = () => { URL.revokeObjectURL(url); done(); };
+      img.src = url;
+    });
+  }
+
+  $('#fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+  $$('.choice').forEach((b) => b.addEventListener('click', () => {
+    state.layout = b.dataset.layout; state.active = 0; syncCells();
+    $$('.choice').forEach((x) => x.classList.toggle('on', x === b));
+    render();
+  }));
+  $$('.grade').forEach((b) => b.addEventListener('click', () => {
+    state.grade = b.dataset.grade;
+    $$('.grade').forEach((x) => x.classList.toggle('on', x === b));
+    render();
+  }));
+  $('#titleText').addEventListener('input', (e) => { state.title = e.target.value; render(); });
+  $('#subText').addEventListener('input', (e) => { state.sub = e.target.value; render(); });
+  $('#titleSize').addEventListener('input', (e) => { state.titleSize = Number(e.target.value); $('#titleSizeNum').textContent = e.target.value; render(); });
+  $('#titleColor').addEventListener('input', (e) => { state.titleColor = e.target.value; render(); });
+  $('#subSize').addEventListener('input', (e) => { state.subSize = Number(e.target.value); $('#subSizeNum').textContent = e.target.value; render(); });
+  $('#subColor').addEventListener('input', (e) => { state.subColor = e.target.value; render(); });
+  $('#boldBtn').addEventListener('click', (e) => {
+    state.bold = !state.bold;
+    e.currentTarget.setAttribute('aria-pressed', String(state.bold));
+    render();
+  });
+  $$('.size').forEach((b) => b.addEventListener('click', () => {
+    state.size = b.dataset.size;
+    $$('.size').forEach((x) => x.classList.toggle('on', x === b));
+  }));
+
+  function canvasPoint(ev) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (ev.clientX - r.left) * canvas.width / r.width, y: (ev.clientY - r.top) * canvas.height / r.height };
+  }
+  function cellAt(p) {
+    return rectsOf(canvas.width, canvas.height).findIndex((r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h);
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    const p = canvasPoint(e), i = cellAt(p);
+    if (i < 0) return;
+    state.active = i;
+    state.drag = { i, last: p };
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add('grabbing');
+    renderTiles();
+    $('#activeName').textContent = `格子 ${i + 1}`;
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!state.drag) return;
+    const p = canvasPoint(e);
+    if (state.span >= 0) {
+      const img = state.photos[state.span]?.img;
+      if (img) {
+        const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * state.spanZoom;
+        const rx = Math.max(0, img.width * scale - canvas.width) || 1;
+        const ry = Math.max(0, img.height * scale - canvas.height) || 1;
+        state.spanX = Math.max(-1, Math.min(1, state.spanX + (p.x - state.drag.last.x) / (rx / 2)));
+        state.spanY = Math.max(-1, Math.min(1, state.spanY + (p.y - state.drag.last.y) / (ry / 2)));
+      }
+    } else {
+      const cell = state.cells[state.drag.i];
+      const r = rectsOf(canvas.width, canvas.height)[state.drag.i];
+      const img = state.photos[cell.photo]?.img;
+      if (img) {
+        const scale = Math.max(r.w / img.width, r.h / img.height) * cell.zoom;
+        const rx = Math.max(0, img.width * scale - r.w) || 1;
+        const ry = Math.max(0, img.height * scale - r.h) || 1;
+        cell.x = Math.max(-1, Math.min(1, cell.x + (p.x - state.drag.last.x) / (rx / 2)));
+        cell.y = Math.max(-1, Math.min(1, cell.y + (p.y - state.drag.last.y) / (ry / 2)));
+      }
+    }
+    state.drag.last = p;
+    drawPoster(canvas.width, canvas.height);
+  });
+  function endDrag() { state.drag = null; canvas.classList.remove('grabbing'); }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('wheel', (e) => {
+    const i = cellAt(canvasPoint(e));
+    if (i < 0) return;
+    e.preventDefault();
+    state.active = i;
+    const d = e.deltaY < 0 ? .06 : -.06;
+    if (state.span >= 0) state.spanZoom = Math.max(1, Math.min(3, state.spanZoom + d));
+    else state.cells[i].zoom = Math.max(1, Math.min(3, state.cells[i].zoom + d));
+    render();
+  }, { passive: false });
+
+  $('#exportBtn').addEventListener('click', () => {
+    if (!state.photos.length) { toast('请先添加照片'); $('#fileInput').click(); return; }
+    const [w, h] = SIZES[state.size];
+    const out = drawPoster(w, h);
+    out.toBlob((blob) => {
+      if (!blob) { toast('导出失败，请重试'); return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vice-city-cover-${w}x${h}.png`;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1200);
+      toast(`PNG 已下载 · ${w} × ${h}`);
+    }, 'image/png');
+  });
+
+  let rsTimer;
+  window.addEventListener('resize', () => { clearTimeout(rsTimer); rsTimer = setTimeout(render, 80); });
+  render();
+})();
+</script>
+</body>
+</html>
